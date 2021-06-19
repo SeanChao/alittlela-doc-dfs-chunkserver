@@ -5,7 +5,6 @@ package org.alittlela;
 
 import org.apache.commons.cli.*;
 
-
 public class App {
     public static AppConfig parseArgs(String[] args) {
         Options options = new Options();
@@ -49,10 +48,20 @@ public class App {
 
     public void runMaster() {
         // TODO:
+        try {
+            HelloWorldServer.main(new String[]{});
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void runChunkServer() {
         // TODO:
+        try {
+            HelloWorldClient.main(new String[]{});
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void run(AppConfig appConfig) {
