@@ -3,12 +3,75 @@
  */
 package org.alittlela;
 
+import org.apache.commons.cli.*;
+
+
 public class App {
-    public String getGreeting() {
-        return "Hello World!";
+    public static AppConfig parseArgs(String[] args) {
+        Options options = new Options();
+
+        Option modeOpt =
+                new Option(
+                        "m",
+                        "mode",
+                        true,
+                        "run in master mode (master) or chunk server mode (chunk)");
+        modeOpt.setRequired(true);
+        options.addOption(modeOpt);
+
+        CommandLineParser parser = new DefaultParser();
+        HelpFormatter formatter = new HelpFormatter();
+        CommandLine cmd = null;
+
+        try {
+            cmd = parser.parse(options, args);
+        } catch (ParseException e) {
+            System.out.println(e.getMessage());
+            formatter.printHelp("dfs -m master|chunk", options);
+            System.exit(1);
+        }
+        AppMode appMode;
+        String mode = cmd.getOptionValue("mode");
+        if (mode.equals("master"))
+            appMode = AppMode.MASTER;
+        else if (mode.equals("chunk"))
+            appMode = AppMode.CHUNK_SERVER;
+        else
+            throw new IllegalArgumentException("Invalid DFS mode: " + mode);
+
+        return new AppConfig(appMode);
     }
 
     public static void main(String[] args) {
-        System.out.println(new App().getGreeting());
+        AppConfig appConfig = parseArgs(args);
+        new App().run(appConfig);
+    }
+
+    public void runMaster() {
+        // TODO:
+    }
+
+    public void runChunkServer() {
+        // TODO:
+    }
+
+    public void run(AppConfig appConfig) {
+        switch (appConfig.mode) {
+            case MASTER:
+                runMaster();
+                break;
+            case CHUNK_SERVER:
+                runChunkServer();
+                break;
+            default:
+                break;
+        }
+    }
+
+    public enum AppMode {MASTER, CHUNK_SERVER}
+
+    record AppConfig(
+            AppMode mode
+    ) {
     }
 }
