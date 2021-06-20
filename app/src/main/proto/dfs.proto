@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "org.alittlela";
+option java_outer_classname = "DfsProto";
+option objc_class_prefix = "HLW";
+
+package alittlela;
+
+service ChunkServer {
+  rpc ChunkRead (ChunkReadReq) returns (ChunkData) {}
+}
+
+message ChunkReadReq {
+  // string representation of the chunk uuid
+  string uuid = 1;
+  // byte range [start, end)
+  uint32 start = 2;
+  uint32 end = 3;
+}
+
+message ChunkData {
+  bytes data = 1;
+}

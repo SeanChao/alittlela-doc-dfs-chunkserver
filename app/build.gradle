@@ -29,6 +29,8 @@ def protocVersion = protobufVersion
 dependencies {
     // Use JUnit Jupiter for testing.
     testImplementation 'org.junit.jupiter:junit-jupiter:5.7.1'
+    testImplementation "io.grpc:grpc-testing:${grpcVersion}"
+    // testImplementation "junit:junit:4.12"
 
     // This dependency is used by the application.
     implementation 'com.google.guava:guava:30.1-jre'

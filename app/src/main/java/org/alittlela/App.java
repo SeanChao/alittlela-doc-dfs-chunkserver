@@ -5,6 +5,8 @@ package org.alittlela;
 
 import org.apache.commons.cli.*;
 
+import static org.alittlela.util.Random.randomPort;
+
 public class App {
     public static AppConfig parseArgs(String[] args) {
         Options options = new Options();
@@ -17,6 +19,9 @@ public class App {
                         "run in master mode (master) or chunk server mode (chunk)");
         modeOpt.setRequired(true);
         options.addOption(modeOpt);
+
+        options.addOption("p", "port", true, "listening port");
+
 
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
@@ -37,8 +42,10 @@ public class App {
             appMode = AppMode.CHUNK_SERVER;
         else
             throw new IllegalArgumentException("Invalid DFS mode: " + mode);
-
-        return new AppConfig(appMode);
+        System.out.println("port: " + cmd.getOptionValue("port"));
+        String portStr = cmd.getOptionValue("port");
+        int port = (portStr != null) ? Integer.parseInt(portStr) : randomPort(10000);
+        return new AppConfig(appMode, port);
     }
 
     public static void main(String[] args) {
@@ -55,10 +62,11 @@ public class App {
         }
     }
 
-    public void runChunkServer() {
+    public void runChunkServer(ChunkServer.ChunkServerConfig config) {
         // TODO:
         try {
-            HelloWorldClient.main(new String[]{});
+            ChunkServer cs = new ChunkServer();
+            cs.run(config);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -70,8 +78,10 @@ public class App {
                 runMaster();
                 break;
             case CHUNK_SERVER:
-                runChunkServer();
+                ChunkServer.ChunkServerConfig config = new ChunkServer.ChunkServerConfig(appConfig.port);
+                runChunkServer(config);
                 break;
+
             default:
                 break;
         }
@@ -80,7 +90,8 @@ public class App {
     public enum AppMode {MASTER, CHUNK_SERVER}
 
     record AppConfig(
-            AppMode mode
+            AppMode mode,
+            int port
     ) {
     }
 }
