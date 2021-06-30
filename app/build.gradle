@@ -76,3 +76,9 @@ tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
 }
+
+test {
+  beforeTest { descriptor ->
+     logger.lifecycle("Running test: ${descriptor}")
+  }
+}

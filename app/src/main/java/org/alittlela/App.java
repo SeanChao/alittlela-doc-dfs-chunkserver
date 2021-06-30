@@ -21,6 +21,8 @@ public class App {
         options.addOption(modeOpt);
 
         options.addOption("p", "port", true, "listening port");
+        options.addOption("c", "chunkservers", true, "address of other chunkservers, in the format\"localhost:1234,localhost:2333\"");
+        options.addOption("m", "masters", true, "address of other masters, in the format\"localhost:1234,localhost:2333\"");
 
 
         CommandLineParser parser = new DefaultParser();
@@ -31,7 +33,7 @@ public class App {
             cmd = parser.parse(options, args);
         } catch (ParseException e) {
             System.out.println(e.getMessage());
-            formatter.printHelp("dfs -m master|chunk", options);
+            formatter.printHelp("dfs -m master|chunk [other options]", options);
             System.exit(1);
         }
         AppMode appMode;
@@ -44,8 +46,12 @@ public class App {
             throw new IllegalArgumentException("Invalid DFS mode: " + mode);
         System.out.println("port: " + cmd.getOptionValue("port"));
         String portStr = cmd.getOptionValue("port");
+        String otherMastersStr = cmd.getOptionValue("masters");
+        String otherChunkserversStr = cmd.getOptionValue("chunkservers");
+        String []otherMasters = otherMastersStr != null ? otherMastersStr.split(","):  new String[0];
+        String []otherChunkServers = otherChunkserversStr != null ? otherChunkserversStr.split(","):  new String[0];
         int port = (portStr != null) ? Integer.parseInt(portStr) : randomPort(10000);
-        return new AppConfig(appMode, port);
+        return new AppConfig(appMode, port, otherMasters, otherChunkServers);
     }
 
     public static void main(String[] args) {
@@ -56,7 +62,7 @@ public class App {
     public void runMaster() {
         // TODO:
         try {
-            HelloWorldServer.main(new String[]{});
+            HelloWorldServer.main(new String[] {});
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -78,7 +84,7 @@ public class App {
                 runMaster();
                 break;
             case CHUNK_SERVER:
-                ChunkServer.ChunkServerConfig config = new ChunkServer.ChunkServerConfig(appConfig.port);
+                ChunkServer.ChunkServerConfig config = new ChunkServer.ChunkServerConfig(appConfig.port, appConfig.masters, appConfig.chunkServers);
                 runChunkServer(config);
                 break;
 
@@ -87,11 +93,18 @@ public class App {
         }
     }
 
-    public enum AppMode {MASTER, CHUNK_SERVER}
+    public enum AppMode {
+        MASTER, CHUNK_SERVER
+    }
 
-    record AppConfig(
-            AppMode mode,
-            int port
-    ) {
+    record AppConfig(AppMode mode, int port,
+            /**
+             * other masters
+             */
+            String[] masters,
+            /**
+             * other chunk servers
+             */
+            String[] chunkServers) {
     }
 }

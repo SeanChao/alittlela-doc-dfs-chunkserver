@@ -6,7 +6,7 @@ A GFS-like distributed file system optimized for shared docs.
 
 ```sh
 # Launch a master node
-./gradlew --args="-m master"
+./gradlew run --args="-m master"
 # Launch a chunk server
-./gradlew --args="-m chunk"
+./gradlew run --args="-m chunk"
 ```
