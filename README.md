@@ -9,4 +9,7 @@ A GFS-like distributed file system optimized for shared docs.
 ./gradlew run --args="-m master"
 # Launch a chunk server
 ./gradlew run --args="-m chunk"
+
+# Running tests
+./gradlew test
 ```

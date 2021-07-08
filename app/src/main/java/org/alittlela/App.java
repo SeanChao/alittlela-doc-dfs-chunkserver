@@ -22,7 +22,7 @@ public class App {
 
         options.addOption("p", "port", true, "listening port");
         options.addOption("c", "chunkservers", true, "address of other chunkservers, in the format\"localhost:1234,localhost:2333\"");
-        options.addOption("m", "masters", true, "address of other masters, in the format\"localhost:1234,localhost:2333\"");
+        options.addOption("s", "masters", true, "address of other masters, in the format\"localhost:1234,localhost:2333\"");
 
 
         CommandLineParser parser = new DefaultParser();
@@ -48,8 +48,8 @@ public class App {
         String portStr = cmd.getOptionValue("port");
         String otherMastersStr = cmd.getOptionValue("masters");
         String otherChunkserversStr = cmd.getOptionValue("chunkservers");
-        String []otherMasters = otherMastersStr != null ? otherMastersStr.split(","):  new String[0];
-        String []otherChunkServers = otherChunkserversStr != null ? otherChunkserversStr.split(","):  new String[0];
+        String[] otherMasters = otherMastersStr != null ? otherMastersStr.split(",") : new String[0];
+        String[] otherChunkServers = otherChunkserversStr != null ? otherChunkserversStr.split(",") : new String[0];
         int port = (portStr != null) ? Integer.parseInt(portStr) : randomPort(10000);
         return new AppConfig(appMode, port, otherMasters, otherChunkServers);
     }
@@ -62,7 +62,7 @@ public class App {
     public void runMaster() {
         // TODO:
         try {
-            HelloWorldServer.main(new String[] {});
+            HelloWorldServer.main(new String[]{});
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -98,13 +98,13 @@ public class App {
     }
 
     record AppConfig(AppMode mode, int port,
-            /**
-             * other masters
-             */
-            String[] masters,
-            /**
-             * other chunk servers
-             */
-            String[] chunkServers) {
+                     /**
+                      * other masters
+                      */
+                     String[] masters,
+                     /**
+                      * other chunk servers
+                      */
+                     String[] chunkServers) {
     }
 }

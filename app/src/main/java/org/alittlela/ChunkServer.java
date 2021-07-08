@@ -1,12 +1,10 @@
 package org.alittlela;
 
 import com.google.protobuf.ByteString;
-
-import org.alittlela.util.ResultUtil;
-
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
+import org.alittlela.util.ResultUtil;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -36,7 +34,7 @@ public class ChunkServer {
     private void start(ChunkServerConfig config) throws IOException {
         /* The port on which the server should run */
         int port = config.listeningPort;
-        server = ServerBuilder.forPort(port).addService(new HelloWorldServer.GreeterImpl()).build().start();
+        server = ServerBuilder.forPort(port).addService(new ChunkServer.ChunkServerImpl()).build().start();
         logger.info("ChunkServer started, listening on " + port);
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             // Use stderr here since the logger may have been reset by its JVM shutdown
@@ -72,8 +70,8 @@ public class ChunkServer {
 
     public byte[] chunkRead(String id, int start, int end) {
         // TODO
-        byte[] testData = new byte[] { 'b', 'e', 'e', 'f' };
-        return testData;
+        System.out.println("chunkRead" + id + " " + start + " " + end);
+        return new byte[]{'b', 'e', 'e', 'f'};
     }
 
     public void appendPrepare(String id, byte[] data) {
@@ -105,7 +103,8 @@ public class ChunkServer {
     }
 
     /**
-     * as a secondary, execute a pending append of {@link chunkId}
+     * as a secondary, execute a pending append of appendId
+     *
      * @param appendId the id of pending append
      * @return Result
      */
