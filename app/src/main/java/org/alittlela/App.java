@@ -62,7 +62,7 @@ public class App {
     public void runMaster() {
         // TODO:
         try {
-            HelloWorldServer.main(new String[]{});
+            throw new Exception("Master not implemented yet");
         } catch (Exception e) {
             e.printStackTrace();
         }

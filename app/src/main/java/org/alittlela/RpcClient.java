@@ -3,6 +3,7 @@ package org.alittlela;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.ArrayList;
 
 import org.alittlela.util.ResultUtil;
 
@@ -11,8 +12,11 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
 
+/**
+ * RpcClient for ChunkServer
+ */
 public class RpcClient {
-	private static final Logger logger = Logger.getLogger(HelloWorldClient.class.getName());
+	private static final Logger logger = Logger.getLogger(ChunkServer.class.getName());
 
 	private final DfsServiceGrpc.DfsServiceBlockingStub blockingStub;
 

@@ -8,12 +8,30 @@ option objc_class_prefix = "HLW";
 package alittlela;
 
 service DfsService {
+  // Master
+  rpc ChunkQuery(Filename) returns (stream ChunkQueryResult) {}
+  rpc LeaseQuery(Filename) returns (LeaseQueryResult) {}
+  // ChunkServer
   rpc ChunkRead(ChunkReadReq) returns (ChunkData) {}
   rpc AppendPrepare(AppendPrepareReq) returns (Result) {}
   // AppendExec is sent from client to the primary to execute a pending append
   rpc PrimaryAppendExec(AppendReq) returns (Result) {}
   // Sent from a primary to all secondary to execute a pending append
   rpc SecondaryAppendExec(SecondaryAppendReq) returns (Result) {}
+}
+
+message Filename {
+  string name = 1;
+}
+
+message ChunkQueryResult {
+  Id id = 1;
+  repeated string chunkServers = 2;
+}
+
+message LeaseQueryResult {
+  string primary = 1;
+  repeated string secondaries = 2;
 }
 
 message ChunkReadReq {
@@ -49,7 +67,7 @@ message ChunkData {
 
 message Result {
   int32 status = 1;
-  optional string message = 2;
+  string message = 2;
 }
 
 message Empty {}
