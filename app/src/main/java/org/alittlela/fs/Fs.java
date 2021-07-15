@@ -16,8 +16,11 @@ public class Fs {
 	 */
 	public static byte[] read(String path, int start, int end) throws FileNotFoundException, IOException {
 		RandomAccessFile file = new RandomAccessFile(path, "r");
-		byte[] buffer = new byte[(int) (end - start)];
-		file.read(buffer, start, end - start);
+		long len = file.length();
+		int readLimit = (int) (end - start < len ? end - start : len);
+		byte[] buffer = new byte[readLimit];
+		file.seek(start);
+		file.read(buffer, 0, readLimit);
 		file.close();
 		return buffer;
 	}

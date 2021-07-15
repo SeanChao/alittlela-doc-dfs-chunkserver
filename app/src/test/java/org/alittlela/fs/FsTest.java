@@ -1,5 +1,6 @@
 package org.alittlela.fs;
 
+import org.alittlela.TestUtil;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -26,6 +27,42 @@ public class FsTest {
 		} finally {
 			f.deleteOnExit();
 		}
+	}
+
+	@Test
+	void readFromOffset() throws Exception {
+		String content = "221B";
+		String path = "Sherlock";
+		TestUtil.createTmpFile(path, content.getBytes());
+		byte[] res = Fs.read(path, 1, content.length());
+		assertArrayEquals("21B".getBytes(), res);
+	}
+
+	@Test
+	void readLessThanFileSize() throws Exception {
+		String content = "Middle Earth";
+		String path = "Shire";
+		TestUtil.createTmpFile(path, content.getBytes());
+		byte[] res = Fs.read(path, 0, content.length() - 1);
+		assertArrayEquals("Middle Eart".getBytes(), res);
+	}
+
+	@Test
+	void readFileSize() throws Exception {
+		String content = "wubba lubba dub dub";
+		String path = "Shire";
+		TestUtil.createTmpFile(path, content.getBytes());
+		byte[] res = Fs.read(path, 0, content.length());
+		assertArrayEquals(content.getBytes(), res);
+	}
+
+	@Test
+	void readExceedFileSize() throws Exception {
+		String content = "月がきれい";
+		String path = "Shire";
+		TestUtil.createTmpFile(path, content.getBytes());
+		byte[] res = Fs.read(path, 0, content.length() + 2017);
+		assertArrayEquals(content.getBytes(), res);
 	}
 
 	@Test
