@@ -22,8 +22,14 @@ public class ChunkServer {
     private String[] chunkServers;
 
     private HashMap<String, AppendOp> pendingAppends = new HashMap<>();
+    private String baseDir;
 
     public ChunkServer() {
+        this.baseDir = "chunk/";
+    }
+
+    public ChunkServer(String baseDir) {
+        this.baseDir = baseDir;
     }
 
     public void run(ChunkServerConfig config) throws IOException, InterruptedException {
@@ -69,8 +75,7 @@ public class ChunkServer {
     }
 
     private String buildPath(String filename) {
-        String baseUrl = "chunks/";
-        return baseUrl + filename;
+        return this.baseDir + filename;
     }
 
     public record ChunkServerConfig(int listeningPort, String[] masters, String[] chunkServers) {
@@ -96,9 +101,16 @@ public class ChunkServer {
         if (data == null) {
             return ResultUtil.newResult(ResultUtil.NO_SUCH_APPEND);
         }
+        AppendOp op = pendingAppends.remove(id);
+        int offset = 0;
+        try {
+            offset = Fs.append(buildPath(op.chunkId), op.data());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResultUtil.error(e.getMessage());
+        }
         Result result = ResultUtil.success();
         // Ask all secondary to execute the append
-        int offset = 0;
         for (String secondary : secondaries) {
             try {
                 RpcClient client = RpcClient.getRpcClient(secondary);
@@ -173,7 +185,7 @@ public class ChunkServer {
         @Override
         public void primaryAppendExec(AppendReq appendReq, StreamObserver<Result> responseObserver) {
             String appendId = appendReq.getAppendId().getId();
-            String[] secondaries = (String[]) appendReq.getSecondariesList().toArray();
+            String[] secondaries = appendReq.getSecondariesList().toArray(new String[0]);
             Result result = ChunkServer.this.appendExec(appendId, secondaries);
             responseObserver.onNext(result);
             responseObserver.onCompleted();

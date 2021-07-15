@@ -11,12 +11,15 @@ import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.testing.GrpcCleanupRule;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import com.google.protobuf.ByteString;
 
 class ChunkServerTest {
+	private final String testBaseDir = "./";
 
 	/**
 	 * This rule manages automatic graceful shutdown for the registered servers and
@@ -31,14 +34,17 @@ class ChunkServerTest {
 	 */
 	@Test
 	void chunkReadImpl() throws Exception {
-		ChunkServer server = new ChunkServer();
+		// Arrange
+		String data = "爷爷爷爷，奶油面包好好吃啊！";
+		String id = "chunk0";
+		TestUtil.createTmpFile(testBaseDir + id, data.getBytes());
+		// Act
+		ChunkServer server = new ChunkServer(testBaseDir);
 		var blockingStub = initRpc(server);
-
-		ChunkData reply = blockingStub
-				.chunkRead(ChunkReadReq.newBuilder().setId(Id.newBuilder().setId("").build()).build());
-
-		byte[] testData = new byte[] { 'b', 'e', 'e', 'f' };
-		// assertEquals(ByteString.copyFrom(testData), reply.getData());
+		ChunkData reply = blockingStub.chunkRead(ChunkReadReq.newBuilder().setId(Id.newBuilder().setId(id).build())
+				.setStart(0).setEnd(data.getBytes().length).build());
+		// Assert
+		assertEquals(ByteString.copyFrom(data.getBytes()), reply.getData());
 	}
 
 	@Test
@@ -49,6 +55,30 @@ class ChunkServerTest {
 				.setData(ChunkData.newBuilder().setData(ByteString.copyFrom("42".getBytes())).build()).build();
 		stub.appendPrepare(req);
 		assertEquals(1, server.getPendingAppends().size());
+	}
+
+	@Test
+	void primaryAppendExecPrimaryDataWritten() throws Exception {
+		// Arrange
+		ChunkServer server = new ChunkServer("chunk/");
+		var stub = initRpc(server);
+		String chunkId = "chunk42";
+		String appendId = "TheAnswer";
+		String data = "42";
+		AppendPrepareReq req = AppendPrepareReq.newBuilder().setId(Id.newBuilder().setId(chunkId).build())
+				.setAppendId(Id.newBuilder().setId(appendId).build())
+				.setData(ChunkData.newBuilder().setData(ByteString.copyFrom(data.getBytes())).build()).build();
+		stub.appendPrepare(req);
+		// Act
+		AppendReq execReq = AppendReq.newBuilder().setAppendId(Id.newBuilder().setId(appendId).build())
+				.addAllSecondaries(new ArrayList<String>()).build();
+		Result r = stub.primaryAppendExec(execReq);
+		// Assert
+		assertEquals(0, r.getStatus());
+		var written = TestUtil.readBytes("chunk/" + chunkId);
+		assertArrayEquals(data.getBytes(), written);
+		// cleanup
+		TestUtil.deleteFile("chunk/" + chunkId);
 	}
 
 	private DfsServiceGrpc.DfsServiceBlockingStub initRpc(ChunkServer server) throws IOException {

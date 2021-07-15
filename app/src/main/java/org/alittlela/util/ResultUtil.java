@@ -12,7 +12,7 @@ public class ResultUtil {
 	}
 
 	public static Result newResult(int status) {
-		return newResult(status, null);
+		return newResult(status, "");
 	}
 
 	public static Result success() {
