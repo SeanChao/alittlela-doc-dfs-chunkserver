@@ -4,6 +4,8 @@ import com.google.protobuf.ByteString;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
+
+import org.alittlela.fs.Fs;
 import org.alittlela.util.ResultUtil;
 
 import java.io.IOException;
@@ -18,7 +20,8 @@ public class ChunkServer {
     // other masters
     private String[] masters;
     private String[] chunkServers;
-    private HashMap<String, byte[]> pendingAppends = new HashMap<>();
+
+    private HashMap<String, AppendOp> pendingAppends = new HashMap<>();
 
     public ChunkServer() {
     }
@@ -65,22 +68,31 @@ public class ChunkServer {
         }
     }
 
+    private String buildPath(String filename) {
+        String baseUrl = "chunks/";
+        return baseUrl + filename;
+    }
+
     public record ChunkServerConfig(int listeningPort, String[] masters, String[] chunkServers) {
     }
 
-    public byte[] chunkRead(String id, int start, int end) {
-        // TODO
-        System.out.println("chunkRead" + id + " " + start + " " + end);
-        return new byte[]{'b', 'e', 'e', 'f'};
+    private record AppendOp(String chunkId, byte[] data) {
     }
 
-    public void appendPrepare(String id, byte[] data) {
-        pendingAppends.put(id, data);
+    public byte[] chunkRead(String id, int start, int end) throws Exception {
+        System.out.println("chunkRead" + id + " " + start + " " + end);
+        String path = buildPath(id);
+        byte[] data = new byte[0];
+        data = Fs.read(path, start, end);
+        return data;
+    }
+
+    public void appendPrepare(String chunkId, String appendId, byte[] data) {
+        pendingAppends.put(appendId, new AppendOp(chunkId, data));
     }
 
     public Result appendExec(String id, String[] secondaries) {
-        // TODO
-        byte[] data = pendingAppends.get(id);
+        byte[] data = pendingAppends.get(id).data();
         if (data == null) {
             return ResultUtil.newResult(ResultUtil.NO_SUCH_APPEND);
         }
@@ -110,12 +122,20 @@ public class ChunkServer {
      */
     public Result secondaryAppend(String appendId, int offset) {
         Result result = ResultUtil.success();
-        // TODO: fs operations
+        AppendOp op = pendingAppends.get(appendId);
+        String filename = buildPath(op.chunkId);
+        byte[] data = op.data();
+        // fs operations
+        try {
+            Fs.write(filename, offset, data);
+        } catch (Exception e) {
+            e.printStackTrace();
+            result = ResultUtil.error(e.getMessage());
+        }
         return result;
     }
 
-
-    public HashMap<String, byte[]> getPendingAppends() {
+    public HashMap<String, AppendOp> getPendingAppends() {
         return pendingAppends;
     }
 
@@ -125,40 +145,45 @@ public class ChunkServer {
     public class ChunkServerImpl extends DfsServiceGrpc.DfsServiceImplBase {
         @Override
         public void chunkRead(ChunkReadReq request, StreamObserver<ChunkData> responseObserver) {
-            // TODO:
             String id = request.getId().getId();
             int start = request.getStart();
             int end = request.getEnd();
-            byte[] readData = ChunkServer.this.chunkRead(id, start, end);
+            byte[] readData = new byte[0];
+            try {
+                readData = ChunkServer.this.chunkRead(id, start, end);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             ChunkData data = ChunkData.newBuilder().setData(ByteString.copyFrom(readData)).build();
             responseObserver.onNext(data);
             responseObserver.onCompleted();
         }
 
         @Override
-        public void appendPrepare(AppendPrepareReq req, StreamObserver<Result> result) {
+        public void appendPrepare(AppendPrepareReq req, StreamObserver<AppendPrepareResult> result) {
             Id id = req.getId();
+            String appendId = req.getAppendId().getId();
             ChunkData data = req.getData();
-            ChunkServer.this.appendPrepare(id.getId(), data.getData().toByteArray());
-            Result res = Result.getDefaultInstance();
+            ChunkServer.this.appendPrepare(id.getId(), appendId, data.getData().toByteArray());
+            AppendPrepareResult res = AppendPrepareResult.newBuilder().setStatus(0).build();
             result.onNext(res);
             result.onCompleted();
         }
 
         @Override
         public void primaryAppendExec(AppendReq appendReq, StreamObserver<Result> responseObserver) {
-            String id = appendReq.getId().getId();
+            String appendId = appendReq.getAppendId().getId();
             String[] secondaries = (String[]) appendReq.getSecondariesList().toArray();
-            Result result = ChunkServer.this.appendExec(id, secondaries);
+            Result result = ChunkServer.this.appendExec(appendId, secondaries);
             responseObserver.onNext(result);
             responseObserver.onCompleted();
         }
 
         @Override
         public void secondaryAppendExec(SecondaryAppendReq request, StreamObserver<Result> responseObserver) {
-            String id = request.getId().getId();
+            String appendId = request.getApppendId().getId();
             int offset = request.getOffset();
-            ChunkServer.this.secondaryAppend(id, offset);
+            ChunkServer.this.secondaryAppend(appendId, offset);
             responseObserver.onCompleted();
         }
     }

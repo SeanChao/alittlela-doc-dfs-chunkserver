@@ -10,10 +10,19 @@ package alittlela;
 service DfsService {
   // Master
   rpc ChunkQuery(Filename) returns (stream ChunkQueryResult) {}
-  rpc LeaseQuery(Filename) returns (LeaseQueryResult) {}
+  rpc LeaseQuery(LeaseQueryReq) returns (LeaseQueryResult) {}
+  //metadata
+  rpc CreateFile (FileName) returns (Result) {}
+  rpc MoveFileToBin (FileName) returns (Result) {}
+  rpc GetFileList (Empty) returns (stream FileName) {}
+  rpc GetFileListFromBin (Empty) returns (stream FileName) {}
+  // lock
+  rpc LockCell (CellLocation) returns (Result) {}
+  rpc ReleaseCell (CellLocation) returns (Result) {}
+
   // ChunkServer
   rpc ChunkRead(ChunkReadReq) returns (ChunkData) {}
-  rpc AppendPrepare(AppendPrepareReq) returns (Result) {}
+  rpc AppendPrepare(AppendPrepareReq) returns (AppendPrepareResult) {}
   // AppendExec is sent from client to the primary to execute a pending append
   rpc PrimaryAppendExec(AppendReq) returns (Result) {}
   // Sent from a primary to all secondary to execute a pending append
@@ -24,6 +33,11 @@ message Filename {
   string name = 1;
 }
 
+message LeaseQueryReq {
+  string name = 1;
+  uint32 newChunkRequired = 2; // 1: new chunk required
+}
+
 message ChunkQueryResult {
   Id id = 1;
   repeated string chunkServers = 2;
@@ -32,6 +46,7 @@ message ChunkQueryResult {
 message LeaseQueryResult {
   string primary = 1;
   repeated string secondaries = 2;
+  Id chunkId = 3;
 }
 
 message ChunkReadReq {
@@ -44,16 +59,22 @@ message ChunkReadReq {
 
 message AppendPrepareReq {
   Id id = 1;
-  ChunkData data = 2;
+  Id appendId = 2;
+  ChunkData data = 3;
+}
+
+message AppendPrepareResult {
+  uint32 status = 1; // 0 for ok, 1 for chunk size limit reached
+  string message = 2;
 }
 
 message AppendReq {
-  Id id = 1; // the id of append
+  Id appendId = 1; // the id of append
   repeated string secondaries = 2; // all the secondaries associated with the append
 }
 
 message SecondaryAppendReq {
-  Id id = 1; // the id of append
+  Id apppendId = 1; // the id of append
   uint32 offset = 2; // the offset of this append in the chunk
 }
 
@@ -71,3 +92,14 @@ message Result {
 }
 
 message Empty {}
+
+message CellLocation {
+  string name = 1;
+  int32 sheet = 2;
+  int32 row = 3;
+  int32 column = 4;
+}
+
+message FileName {
+  string name = 1;
+}

@@ -55,7 +55,7 @@ public class RpcClient {
 
 	public Result issueSecondaryAppend(String idString, int offset) {
 		Id id = Id.newBuilder().setId(idString).build();
-		SecondaryAppendReq request = SecondaryAppendReq.newBuilder().setId(id).setOffset(offset).build();
+		SecondaryAppendReq request = SecondaryAppendReq.newBuilder().setApppendId(id).setOffset(offset).build();
 		Result result;
 		try {
 			result = blockingStub.secondaryAppendExec(request);
