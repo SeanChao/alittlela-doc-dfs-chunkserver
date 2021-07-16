@@ -1,0 +1,18 @@
+# create a cluster of chunkservers
+version: '3'
+
+services:
+  chunkserver0:
+    image: seanchao/chunkserver
+    command:
+      - '-m'
+      - 'chunk'
+      - '-p'
+      - '10000'
+  chunkserver1:
+    image: seanchao/chunkserver
+    command:
+      - '-m'
+      - 'chunk'
+      - '-p'
+      - '10000'
