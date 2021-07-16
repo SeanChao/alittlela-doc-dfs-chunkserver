@@ -43,6 +43,12 @@ public class Fs {
 		return len;
 	}
 
+	public static long fileSize(String path) throws FileNotFoundException, IOException {
+		RandomAccessFile f = new RandomAccessFile(path, "r");
+		long size = f.length();
+		return size;
+	}
+
 	private static void createParentDirs(String path) {
 		File f = new File(path);
 		File parent = f.getParentFile();

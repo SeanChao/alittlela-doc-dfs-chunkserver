@@ -8,6 +8,7 @@ import io.grpc.stub.StreamObserver;
 import org.alittlela.fs.Fs;
 import org.alittlela.util.ResultUtil;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
@@ -23,6 +24,7 @@ public class ChunkServer {
 
     private HashMap<String, AppendOp> pendingAppends = new HashMap<>();
     private String baseDir;
+    private static final long CHUNK_SIZE = 1024 * 1024;
 
     public ChunkServer() {
         this.baseDir = "chunk/";
@@ -88,7 +90,13 @@ public class ChunkServer {
         System.out.println("chunkRead" + id + " " + start + " " + end);
         String path = buildPath(id);
         byte[] data = new byte[0];
-        data = Fs.read(path, start, end);
+        try {
+            data = Fs.read(path, start, end);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            System.out.println("file " + id + " not found");
+        }
+        System.out.println("chunkRead" + id + " " + start + " " + end + " " + data.length + "data: " + data);
         return data;
     }
 
@@ -106,6 +114,10 @@ public class ChunkServer {
         AppendOp op = pendingAppends.remove(id);
         int offset = 0;
         try {
+            offset = (int) Fs.fileSize(buildPath(op.chunkId()));
+            if (offset > CHUNK_SIZE) {
+                return ResultUtil.error("exceeds chunksize, plz retry");
+            }
             offset = Fs.append(buildPath(op.chunkId), op.data());
         } catch (Exception e) {
             e.printStackTrace();
@@ -141,6 +153,7 @@ public class ChunkServer {
         AppendOp op = pendingAppends.get(appendId);
         String filename = buildPath(op.chunkId);
         byte[] data = op.data();
+        logger.info("secondaryAppend appendId: " + appendId + " offset: " + offset + " data: " + new String(data));
         // fs operations
         try {
             Fs.write(filename, offset, data);
