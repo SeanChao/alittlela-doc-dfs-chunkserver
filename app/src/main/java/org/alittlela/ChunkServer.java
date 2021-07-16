@@ -93,10 +93,12 @@ public class ChunkServer {
     }
 
     public void appendPrepare(String chunkId, String appendId, byte[] data) {
+        logger.info("appendPrepare chunkId: " + chunkId + " appendId: " + appendId);
         pendingAppends.put(appendId, new AppendOp(chunkId, data));
     }
 
     public Result appendExec(String id, String[] secondaries) {
+        logger.info("appendExec appendId: " + id);
         byte[] data = pendingAppends.get(id).data();
         if (data == null) {
             return ResultUtil.newResult(ResultUtil.NO_SUCH_APPEND);
@@ -112,6 +114,7 @@ public class ChunkServer {
         Result result = ResultUtil.success();
         // Ask all secondary to execute the append
         for (String secondary : secondaries) {
+            logger.info("ask " + secondary + " to execute append");
             try {
                 RpcClient client = RpcClient.getRpcClient(secondary);
                 Result clientResult = client.issueSecondaryAppend(id, offset);
@@ -120,6 +123,7 @@ public class ChunkServer {
                     break;
                 }
             } catch (Exception e) {
+                e.printStackTrace();
                 result = ResultUtil.error();
             }
         }
@@ -195,7 +199,8 @@ public class ChunkServer {
         public void secondaryAppendExec(SecondaryAppendReq request, StreamObserver<Result> responseObserver) {
             String appendId = request.getApppendId().getId();
             int offset = request.getOffset();
-            ChunkServer.this.secondaryAppend(appendId, offset);
+            Result result = ChunkServer.this.secondaryAppend(appendId, offset);
+            responseObserver.onNext(result);
             responseObserver.onCompleted();
         }
     }

@@ -47,7 +47,7 @@ public class RpcClient {
 			// resources the channel should be shut down when it will no longer be used. If
 			// it may be used
 			// again leave it running.
-			channel.shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
+			// channel.shutdownNow().awaitTermination(50, TimeUnit.SECONDS);
 		}
 		return client;
 	}
@@ -60,7 +60,7 @@ public class RpcClient {
 			result = blockingStub.secondaryAppendExec(request);
 		} catch (StatusRuntimeException e) {
 			logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
-			return ResultUtil.error(e.toString());
+			return ResultUtil.error("chunkserver error: " + e.toString());
 		}
 		return result;
 	}
