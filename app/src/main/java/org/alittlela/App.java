@@ -44,7 +44,6 @@ public class App {
             appMode = AppMode.CHUNK_SERVER;
         else
             throw new IllegalArgumentException("Invalid DFS mode: " + mode);
-        System.out.println("port: " + cmd.getOptionValue("port"));
         String portStr = cmd.getOptionValue("port");
         String otherMastersStr = cmd.getOptionValue("masters");
         String otherChunkserversStr = cmd.getOptionValue("chunkservers");

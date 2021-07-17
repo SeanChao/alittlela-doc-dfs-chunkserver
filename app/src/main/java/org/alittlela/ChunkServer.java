@@ -87,7 +87,6 @@ public class ChunkServer {
     }
 
     public byte[] chunkRead(String id, int start, int end) throws Exception {
-        System.out.println("chunkRead" + id + " " + start + " " + end);
         String path = buildPath(id);
         byte[] data = new byte[0];
         try {
@@ -96,7 +95,10 @@ public class ChunkServer {
             e.printStackTrace();
             System.out.println("file " + id + " not found");
         }
-        System.out.println("chunkRead" + id + " " + start + " " + end + " " + data.length + "data: " + data);
+        System.out.println("chunkRead chunkId: " + id + " [" + start + " " + end + ") len: " + data.length + "data: ");
+        for (int i = 0; i < data.length; i++) {
+            System.out.print(String.format("%X", data[i]) + " ");
+        }
         return data;
     }
 
