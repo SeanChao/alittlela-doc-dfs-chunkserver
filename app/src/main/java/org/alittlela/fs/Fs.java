@@ -4,8 +4,12 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class Fs {
+	static Lock l = new ReentrantLock();
+
 	/**
 	 * Read file at path with range [start, end)
 	 * 
@@ -35,11 +39,13 @@ public class Fs {
 
 	public static int append(String path, byte[] content) throws FileNotFoundException, IOException {
 		createParentDirs(path);
+		l.lock();
 		RandomAccessFile f = new RandomAccessFile(path, "rw");
 		int len = (int) f.length();
 		f.seek(len);
 		f.write(content);
 		f.close();
+		l.unlock();
 		return len;
 	}
 

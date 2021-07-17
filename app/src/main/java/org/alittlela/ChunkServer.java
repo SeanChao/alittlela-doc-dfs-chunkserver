@@ -80,6 +80,15 @@ public class ChunkServer {
         return this.baseDir + filename;
     }
 
+    private String prettyPrintBytes(byte[] array) {
+        String s = "";
+        for (int i = 0; i < array.length; i++) {
+            s += String.format("%d", array[i]) + " ";
+            // s += String.format("%02x", array[i]) + " ";
+        }
+        return s;
+    }
+
     public record ChunkServerConfig(int listeningPort, String[] masters, String[] chunkServers) {
     }
 
@@ -92,13 +101,10 @@ public class ChunkServer {
         try {
             data = Fs.read(path, start, end);
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            System.out.println("file " + id + " not found");
+            logger.info("file " + id + " not found, returns empty");
         }
-        System.out.println("chunkRead chunkId: " + id + " [" + start + " " + end + ") len: " + data.length + "data: ");
-        for (int i = 0; i < data.length; i++) {
-            System.out.print(String.format("%X", data[i]) + " ");
-        }
+        logger.info("chunkRead chunkId: " + id + " [" + start + " " + end + ") len: " + data.length + " data: "        + prettyPrintBytes(data));
+        System.out.println();
         return data;
     }
 
@@ -113,11 +119,12 @@ public class ChunkServer {
         if (data == null) {
             return ResultUtil.newResult(ResultUtil.NO_SUCH_APPEND);
         }
+        long newDataLen = data.length;
         AppendOp op = pendingAppends.remove(id);
         int offset = 0;
         try {
             offset = (int) Fs.fileSize(buildPath(op.chunkId()));
-            if (offset > CHUNK_SIZE) {
+            if (offset + newDataLen > CHUNK_SIZE) {
                 return ResultUtil.error("exceeds chunksize, plz retry");
             }
             offset = Fs.append(buildPath(op.chunkId), op.data());
@@ -155,7 +162,8 @@ public class ChunkServer {
         AppendOp op = pendingAppends.get(appendId);
         String filename = buildPath(op.chunkId);
         byte[] data = op.data();
-        logger.info("secondaryAppend appendId: " + appendId + " offset: " + offset + " data: " + new String(data));
+        logger.info("secondaryAppend appendId: " + appendId + " offset: " + offset + " data: [" + prettyPrintBytes(data) + "]");
+        // logger.info("secondaryAppend appendId: " + appendId + " offset: " + offset);
         // fs operations
         try {
             Fs.write(filename, offset, data);
